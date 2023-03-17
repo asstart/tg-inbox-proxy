@@ -9,14 +9,14 @@ import (
 )
 
 type Handler interface {
-	Handle(msg tele.Context, ctx context.Context) ([]byte, fmt.Stringer, error)
+	Handle(ctx context.Context, msg tele.Context) ([]byte, fmt.Stringer, error)
 }
 
-type TextMessageHandler struct {}
+type TextMessageHandler struct{}
 
 var ErrEmptyMessage = errors.New("empty message")
 
-func (h *TextMessageHandler) Handle(msg tele.Context, ctx context.Context) ([]byte, fmt.Stringer, error) {
+func (h *TextMessageHandler) Handle(ctx context.Context, msg tele.Context) ([]byte, fmt.Stringer, error) {
 	txt := msg.Text()
 	if txt == "" {
 		return nil, nil, ErrEmptyMessage

@@ -9,17 +9,17 @@ import (
 )
 
 type Sender interface {
-	Send(msg []byte, key fmt.Stringer, ctx context.Context) error
+	Send(ctx context.Context, msg []byte, key fmt.Stringer) error
 }
 
 type KafkaSender struct {
-	Dest Destination
+	Dest     Destination
 	Producer sarama.AsyncProducer
 }
 
 var ErrEmptyDestination = errors.New("empty destination")
 
-func (k *KafkaSender) Send(msg []byte, key fmt.Stringer, ctx context.Context) error {
+func (k *KafkaSender) Send(ctx context.Context, msg []byte, key fmt.Stringer) error {
 	topic := k.Dest.GetDestination(nil)
 	if topic == "" {
 		return ErrEmptyDestination
@@ -33,7 +33,7 @@ func (k *KafkaSender) Send(msg []byte, key fmt.Stringer, ctx context.Context) er
 	} else {
 		k.Producer.Input() <- &sarama.ProducerMessage{
 			Topic: topic,
-			Key: sarama.StringEncoder(key.String()),
+			Key:   sarama.StringEncoder(key.String()),
 			Value: sarama.ByteEncoder(msg),
 		}
 	}
