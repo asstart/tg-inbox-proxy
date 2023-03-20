@@ -22,18 +22,20 @@ import (
 
 type opts struct {
 	Token                 string `short:"t" long:"token" env:"TG_BOT_TOKEN" description:"Telegram bot token" required:"true"`
-	Brokers               string `short:"b" long:"brokers" env:"KAFKA_BROKERS" description:"Kafka brokers list" required:"true"`
+	Brokers               string `short:"b" long:"brokers" env:"KAFKA_BROKERS" description:"Kafka brokers list" required:"false" default:"localhost:9092"`
 	DefaultTopic          string `short:"s" long:"default-topic" env:"DEFAULT_TOPIC" description:"Default topic for messages" required:"false" default:"messages"`
 	BrokerConnRetries     int    `short:"r" long:"broker-conn-retries" env:"BROKER_CONC_RETRIES" description:"Number of retries for concurrent broker errors" required:"false" default:"5"`
 	BrokerConnRetryTimout int    `short:"d" long:"broker-conn-retry-timeout" env:"BROKER_CONC_RETRY_TIMEOUT" description:"Timeout for broker connection retry in seconds" required:"false" default:"30"`
+	Test                  bool   `long:"test" env:"TEST" description:"Test" required:"false"`
 }
 
 func (o *opts) String() string {
 	return fmt.Sprintf(`Brokers: %s
 		Default topic: %s
 		Broker connection retries: %d
-		Broker connection retry timeout: %d`,
-		o.Brokers, o.DefaultTopic, o.BrokerConnRetries, o.BrokerConnRetryTimout)
+		Broker connection retry timeout: %d
+		Test mode: %t`,
+		o.Brokers, o.DefaultTopic, o.BrokerConnRetries, o.BrokerConnRetryTimout, o.Test)
 }
 
 func main() {
@@ -57,11 +59,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	producer := setupProducer(o, logger)
+	var sender Sender
 
-	sender := &KafkaSender{
-		Dest:     setupTextDestination(o),
-		Producer: producer,
+	if o.Test {
+		sender = setupStdoutSender()
+	} else {
+
+		producer := setupProducer(o, logger)
+
+		sender = &KafkaSender{
+			Dest:     setupTextDestination(o),
+			Producer: producer,
+		}
 	}
 
 	txtMsgPipe := Pipe{
@@ -93,10 +102,10 @@ func main() {
 		logger.Info("context done")
 		bot.Stop()
 		logger.Info("bot stopped")
-		if err := producer.Close(); err != nil {
+		if err := sender.Close(); err != nil {
 			return err
 		}
-		logger.Info("producer closed")
+		logger.Info("sender closed")
 		return nil
 	})
 
@@ -122,7 +131,7 @@ func botSettings(o opts) tele.Settings {
 	return tele.Settings{
 		Token: o.Token,
 		Poller: &tele.LongPoller{
-			Timeout:        10 * time.Second,
+			Timeout:        30 * time.Second,
 			AllowedUpdates: []string{"message", "edited_message"},
 		},
 	}
@@ -175,6 +184,12 @@ func setupProducer(o opts, logger logr.Logger) sarama.AsyncProducer {
 	}()
 
 	return producer
+}
+
+func setupStdoutSender() Sender {
+	return &FileSender{
+		File: os.Stdout,
+	}
 }
 
 func setupLogger() logr.Logger {
