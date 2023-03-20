@@ -1,4 +1,4 @@
-module tg-inbox-proxy
+module github.com/asstart/tg-inbox-proxy
 
 go 1.19
 
@@ -11,6 +11,7 @@ require (
 	github.com/gdexlab/go-render v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zerologr v1.2.3 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -31,5 +32,6 @@ require (
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/telebot.v3 v3.1.3 // indirect
 )
